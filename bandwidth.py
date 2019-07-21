@@ -3,8 +3,10 @@
 #
 # Maintained by awlnx - aw@awlnx.space
 #
+
 import subprocess
 import time
+import re
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
 from PIL import Image
@@ -16,6 +18,7 @@ wifi = 'wlan0'
 vpn = 'fastd-welt'
 batman = 'bat-welt'
 primary_mac = 'dc:a6:32:00:6b:59'
+snmp_secret = 'secret'
 
 # We assume 100mbit/s max bandwidth
 maxRateIn = 10000000
@@ -24,6 +27,19 @@ PImaxRateIn = 100000000
 PImaxRateOut = 100000000
 
 ### DO NOT EDIT BELOW THIS POINT ###
+
+# Trying to find ifIndex of interface
+try:
+    ifIndexData = subprocess.check_output("snmpwalk -v2c -c " + snmp_secret + " 127.0.0.1 1.3.6.1.2.1.31.1.1.1", shell=True)
+
+    for ifIndex in ifIndexData.decode('UTF-8').split('\n'):
+        if wifi in ifIndex:
+            wifiIndex = re.search('[0-9]+$',ifIndex.split()[0]).group(0)
+        elif vpn in ifIndex:
+            vpnIndex = re.search('[0-9]+$',ifIndex.split()[0]).group(0)
+except subprocess.CalledProcessError as e:
+    print("Getting interfaces failed " + e)
+    raise SystemExit
 
 # Raspberry Pi pin configuration:
 RST = 24
@@ -47,20 +63,20 @@ image = Image.new('1', (width, height))
 # Get drawing object to draw on image.
 draw = ImageDraw.Draw(image)
 
-font = ImageFont.truetype('Ubuntu-M.ttf', 12)
-fontsmall = ImageFont.truetype('Ubuntu-M.ttf', 10)
-fontverysmall = ImageFont.truetype('Ubuntu-M.ttf', 8)
-fontmedium = ImageFont.truetype('Ubuntu-M.ttf', 12)
+font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 12)
+fontsmall = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 10)
+fontverysmall = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 8)
+fontmedium = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', 12)
 
 #Display Image
 disp.image(image)
 disp.display()
 
 #OIDs to poll
-oidInWan = 'IF-MIB::ifInOctets.10'
-oidOutWan = 'IF-MIB::ifOutOctets.10'
-oidInPI = 'IF-MIB::ifInOctets.3'
-oidOutPI = 'IF-MIB::ifOutOctets.3'
+oidInWan = 'IF-MIB::ifInOctets.' + vpnIndex
+oidOutWan = 'IF-MIB::ifOutOctets.' + vpnIndex
+oidInPI = 'IF-MIB::ifInOctets.' + wifiIndex
+oidOutPI = 'IF-MIB::ifOutOctets.' + wifiIndex
 
 
 
@@ -68,7 +84,7 @@ oidOutPI = 'IF-MIB::ifOutOctets.3'
 def getSnmpData (oid):
 
     try:
-        data = subprocess.check_output("snmpget -v2c -c secret 127.0.0.1 " + oid, shell = True)
+        data = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + oid, shell = True)
     except subprocess.CalledProcessError as e:
         data = e
     else:
@@ -78,7 +94,7 @@ def getSnmpData (oid):
 def getSnmpInt (oid):
 
     try:
-        data = subprocess.check_output("snmpget -v2c -c secret 127.0.0.1 " + oid, shell = True)
+        data = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + oid, shell = True)
         data = data.split()
         data = data.pop()
     except:
@@ -88,7 +104,7 @@ def getSnmpInt (oid):
 def getSnmpPIData (PIoid):
 
         try:
-                PIdata = subprocess.check_output("snmpget -v2c -c secret 127.0.0.1 " + PIoid, shell = True)
+                PIdata = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + PIoid, shell = True)
         except subprocess.CalledProcessError as f:
                 PIdata = f
         else:
@@ -98,7 +114,7 @@ def getSnmpPIData (PIoid):
 def getSnmpPIInt (PIoid):
 
         try:
-                PIdata = subprocess.check_output("snmpget -v2c -c secret 127.0.0.1 " + PIoid, shell = True)
+                PIdata = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + PIoid, shell = True)
                 PIdata = PIdata.split()
                 PIdata = PIdata.pop()
         except:

@@ -132,18 +132,17 @@ def drawBarLOW (x, barLOWHeight):
         draw.rectangle ((x, 32 + barLOWHeight, x + 10, height - 32), outline=255, fill=255)
 
 def textRate(rate):
-    # size_bytes -> raw bitrate
+    # rate -> raw bitrate
     # Returns: SI formatted bitrate
-    if size_bytes == 0:
+    if rate == 0:
         return "0B"
+    rate = rate * 8
     size_name = (
-        "Bits/sec", "KBits/sec", "MBits/sec", "GBits/sec", "TBits/sec", "PBits/sec", "EBits/sec")
-    i = int(math.floor(math.log(size_bytes, 1024)))
+        "b/s", "kb/s", "mb/s", "gb/s", "tb/s", "pb/s", "eb/s")
+    i = int(math.floor(math.log(rate , 1024)))
     p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
+    s = round(rate / p, 1)
     return "%s %s" % (s, size_name[i])
-
-
 
 lastInBytes = getSnmpInt (oidInWan);
 lastOutBytes = getSnmpInt (oidOutWan);

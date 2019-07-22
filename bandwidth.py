@@ -71,11 +71,11 @@ def get_network_bytes(interface):
 def drawBar (x, barHeight):
     # parameters are x, y, end x, end y
     # draw.rectangle ((x, height - barHeight, x + 10, height -1), outline=255, fill=255)
-    draw.rectangle ((x, 32 - barHeight, x + 10, height - 32), outline=255, fill=255)
+    draw.rectangle ((x, 32 - barHeight, x + 8, height - 32), outline=255, fill=255)
 
 def drawBarLOW (x, barLOWHeight):
         # parameters are x, y, end x, end y
-        draw.rectangle ((x, 32 + barLOWHeight, x + 10, height - 32), outline=255, fill=255)
+        draw.rectangle ((x, 32 + barLOWHeight, x + 8, height - 32), outline=255, fill=255)
 
 def textRate(rate):
     # rate -> raw bitrate
@@ -137,7 +137,6 @@ while (1):
     lastPIOutBytes = PIoutBytes
 
 
-    # currPIinBytes = 'dog '
     #max rate last 24 hours calculations
 
     if currInBytes > highestSpeedIn:
@@ -192,7 +191,7 @@ while (1):
     PIoutHeight = 0.0
 
     if currInBytes > 0:
-        inHeight = float(currInBytes / maxRateIn) * 32  #was maxRateIn
+        inHeight = float(currInBytes / maxRateIn) * 32 
 
     if currOutBytes > 0:
         outHeight = float(currOutBytes / maxRateOut) * 32
@@ -204,29 +203,29 @@ while (1):
         PIoutHeight = float(currPIOutBytes / PImaxRateOut) * 32
 
     drawBar (0, inHeight)
-    drawBar (12, PIinHeight)
+    drawBar (10, PIinHeight)
     drawBarLOW (0, outHeight)
-    drawBarLOW (12, PIoutHeight)
+    drawBarLOW (10, PIoutHeight)
     #write rates
-    draw.text((31,38), textRate(currInBytes), font=font, fill=255)
-    draw.text((31,50), textRate(currOutBytes), font=font, fill=255)
+    draw.text((26,38), textRate(currInBytes), font=font, fill=255)
+    draw.text((26,50), textRate(currOutBytes), font=font, fill=255)
 
-    draw.text((85,38), textRate(currPIInBytes), font=font, fill=255)
-    draw.text((85,50), textRate(currPIOutBytes), font=font, fill=255)
+    draw.text((81,38), textRate(currPIInBytes), font=font, fill=255)
+    draw.text((81,50), textRate(currPIOutBytes), font=font, fill=255)
 
     # Batman Clients
     clients = subprocess.check_output("batctl -m " + batman + " tl | egrep -v '(MainIF|" + primary_mac + ")' | egrep -o '([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})' | wc -l", shell=True).split().pop()
     draw.text((0,48), "Clients", font=fontverysmall, fill=255)
-    draw.text((12,55), clients.decode("utf-8"), font=fontverysmall, fill=255)
+    draw.text((10,55), clients.decode("utf-8"), font=fontverysmall, fill=255)
 
     #max rates
     draw.text((36,0), "VPN", font=fontsmall, fill=255)
-    draw.text((31,10), textRate(inMax), font=fontsmall, fill=255)
-    draw.text((31,20), textRate(outMax), font=fontsmall, fill=255)
+    draw.text((26,10), textRate(inMax), font=fontsmall, fill=255)
+    draw.text((26,20), textRate(outMax), font=fontsmall, fill=255)
 
     draw.text((90,0), "Wifi", font=fontsmall, fill=255)
-    draw.text((85,10), textRate(PIinMax), font=fontsmall, fill=255)
-    draw.text((85,20), textRate(PIoutMax), font=fontsmall, fill=255)
+    draw.text((81,10), textRate(PIinMax), font=fontsmall, fill=255)
+    draw.text((81,20), textRate(PIoutMax), font=fontsmall, fill=255)
 
     disp.image(image)
     disp.display()

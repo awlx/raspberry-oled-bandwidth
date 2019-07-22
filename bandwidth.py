@@ -23,8 +23,8 @@ primary_mac = 'dc:a6:32:00:6b:59'
 # We assume 100mbit/s max bandwidth
 maxRateIn = 10000000
 maxRateOut = 10000000
-PImaxRateIn = 100000000
-PImaxRateOut = 100000000
+PImaxRateIn = 10000000
+PImaxRateOut = 10000000
 
 ### DO NOT EDIT BELOW THIS POINT ###
 

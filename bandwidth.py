@@ -19,7 +19,6 @@ wifi = 'wlan0'
 vpn = 'fastd-welt'
 batman = 'bat-welt'
 primary_mac = 'dc:a6:32:00:6b:59'
-snmp_secret = 'secret'
 
 # We assume 100mbit/s max bandwidth
 maxRateIn = 10000000
@@ -28,19 +27,6 @@ PImaxRateIn = 100000000
 PImaxRateOut = 100000000
 
 ### DO NOT EDIT BELOW THIS POINT ###
-
-# Trying to find ifIndex of interface
-try:
-    ifIndexData = subprocess.check_output("snmpwalk -v2c -c " + snmp_secret + " 127.0.0.1 1.3.6.1.2.1.31.1.1.1", shell=True)
-
-    for ifIndex in ifIndexData.decode('UTF-8').split('\n'):
-        if wifi in ifIndex:
-            wifiIndex = re.search('[0-9]+$',ifIndex.split()[0]).group(0)
-        elif vpn in ifIndex:
-            vpnIndex = re.search('[0-9]+$',ifIndex.split()[0]).group(0)
-except subprocess.CalledProcessError as e:
-    print("Getting interfaces failed " + e)
-    raise SystemExit
 
 # Raspberry Pi pin configuration:
 RST = 24
@@ -73,54 +59,14 @@ fontmedium = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf
 disp.image(image)
 disp.display()
 
-#OIDs to poll
-oidInWan = 'IF-MIB::ifInOctets.' + vpnIndex
-oidOutWan = 'IF-MIB::ifOutOctets.' + vpnIndex
-oidInPI = 'IF-MIB::ifInOctets.' + wifiIndex
-oidOutPI = 'IF-MIB::ifOutOctets.' + wifiIndex
+#Functions
 
-
-
-#functions
-def getSnmpData (oid):
-
-    try:
-        data = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + oid, shell = True)
-    except subprocess.CalledProcessError as e:
-        data = e
-    else:
-        data = "unhandled error"
-    return data;
-
-def getSnmpInt (oid):
-
-    try:
-        data = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + oid, shell = True)
-        data = data.split()
-        data = data.pop()
-    except:
-        data = "0"
-    return int(data)
-
-def getSnmpPIData (PIoid):
-
-        try:
-                PIdata = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + PIoid, shell = True)
-        except subprocess.CalledProcessError as f:
-                PIdata = f
-        else:
-                PIdata = "unhandled error"
-        return PIdata;
-
-def getSnmpPIInt (PIoid):
-
-        try:
-                PIdata = subprocess.check_output("snmpget -v2c -c " + snmp_secret + " 127.0.0.1 " + PIoid, shell = True)
-                PIdata = PIdata.split()
-                PIdata = PIdata.pop()
-        except:
-                PIdata = "0"
-        return int(PIdata)
+def get_network_bytes(interface):
+    for line in open('/proc/net/dev', 'r'):
+        if interface in line:
+            data = line.split('%s:' % interface)[1].split()
+            rx_bytes, tx_bytes = (data[0], data[8])
+            return (int(rx_bytes), int(tx_bytes))
 
 def drawBar (x, barHeight):
     # parameters are x, y, end x, end y
@@ -144,10 +90,10 @@ def textRate(rate):
     s = round(rate / p, 1)
     return "%s %s" % (s, size_name[i])
 
-lastInBytes = getSnmpInt (oidInWan);
-lastOutBytes = getSnmpInt (oidOutWan);
-lastPIInBytes = getSnmpPIInt (oidInPI);
-lastPIOutBytes = getSnmpPIInt (oidOutPI);
+lastInBytes = get_network_bytes(vpn)[0];
+lastOutBytes = get_network_bytes(vpn)[1];
+lastPIInBytes = get_network_bytes(wifi)[0];
+lastPIOutBytes = get_network_bytes(wifi)[1];
 lastTime = time.time()
 
 #timed array vars
@@ -174,19 +120,19 @@ while (1):
     lastTime = now
 
     #calculate rates in and out
-    inBytes = getSnmpInt (oidInWan)
+    inBytes = get_network_bytes(vpn)[0]
     currInBytes = (inBytes - lastInBytes) / elapsed
     lastInBytes = inBytes
 
-    outBytes = getSnmpInt (oidOutWan)
+    outBytes = get_network_bytes(vpn)[1]
     currOutBytes = (outBytes - lastOutBytes) / elapsed
     lastOutBytes = outBytes
 
-    PIinBytes = getSnmpPIInt (oidInPI)
+    PIinBytes = get_network_bytes(wifi)[0]
     currPIInBytes = (PIinBytes - lastPIInBytes) / elapsed
     lastPIInBytes = PIinBytes
 
-    PIoutBytes = getSnmpPIInt (oidOutPI)
+    PIoutBytes = get_network_bytes(wifi)[1]
     currPIOutBytes = (PIoutBytes - lastPIOutBytes) / elapsed
     lastPIOutBytes = PIoutBytes
 

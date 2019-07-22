@@ -12,6 +12,7 @@ import Adafruit_SSD1306
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+import math
 
 # Adjust to your needs
 wifi = 'wlan0'
@@ -130,13 +131,18 @@ def drawBarLOW (x, barLOWHeight):
         # parameters are x, y, end x, end y
         draw.rectangle ((x, 32 + barLOWHeight, x + 10, height - 32), outline=255, fill=255)
 
-def textRate (rate):
-    rate = rate * 8 / 1000
-    if rate < 1000:
-        result = str(round(rate,1)) + 'kb/s'
-    else:
-        result = str(round(rate/1000,1)) + 'mb/s'
-    return result
+def textRate(rate):
+    # size_bytes -> raw bitrate
+    # Returns: SI formatted bitrate
+    if size_bytes == 0:
+        return "0B"
+    size_name = (
+        "Bits/sec", "KBits/sec", "MBits/sec", "GBits/sec", "TBits/sec", "PBits/sec", "EBits/sec")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])
+
 
 
 lastInBytes = getSnmpInt (oidInWan);
